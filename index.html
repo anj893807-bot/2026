@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>할 일 관리</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --text: #1f2328;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #4f46e5;
+    --accent-soft: #eef2ff;
+    --danger: #ef4444;
+    --done: #9ca3af;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .app {
+    width: 100%;
+    max-width: 480px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .progress-row strong {
+    color: var(--text);
+    font-size: 15px;
+  }
+  .progress-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: var(--border);
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 0.2s ease;
+  }
+  .add-form {
+    display: flex;
+    gap: 8px;
+  }
+  .add-form input[type="text"] {
+    flex: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+  }
+  select {
+    padding: 10px 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 14px;
+    background: white;
+    max-width: 110px;
+  }
+  button {
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    padding: 10px 16px;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .filter-chip {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .filter-chip.active {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .filter-chip button.select-chip {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font: inherit;
+  }
+  .filter-chip .remove-cat {
+    background: none;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1;
+    padding: 0 2px;
+  }
+  .filter-chip .remove-cat:hover { color: var(--danger); }
+  .add-cat-form {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+  }
+  .add-cat-form input {
+    flex: 1;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+  }
+  .add-cat-form button {
+    background: var(--border);
+    color: var(--text);
+    padding: 6px 10px;
+    font-size: 13px;
+  }
+  .todo-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .todo-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .todo-item:last-child { border-bottom: none; }
+  .todo-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .todo-title {
+    flex: 1;
+    font-size: 14px;
+    cursor: text;
+    word-break: break-word;
+  }
+  .todo-item.done .todo-title {
+    text-decoration: line-through;
+    color: var(--done);
+  }
+  .todo-title[contenteditable="true"] {
+    outline: 1px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+    padding: 0 2px;
+  }
+  .cat-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .delete-btn {
+    background: none;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    flex-shrink: 0;
+  }
+  .delete-btn:hover { color: var(--danger); }
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    padding: 24px 0;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>할 일 관리</h1>
+
+  <div class="card">
+    <div class="progress-row">
+      <span>진행률</span>
+      <strong id="progressLabel">0 / 0 완료 (0%)</strong>
+    </div>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="card">
+    <form class="add-form" id="addForm">
+      <input type="text" id="todoInput" placeholder="할 일을 입력하세요" maxlength="200" autocomplete="off">
+      <select id="categorySelect"></select>
+      <button type="submit" class="btn-primary">추가</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <div class="filters" id="filterChips"></div>
+    <div class="add-cat-form">
+      <input type="text" id="newCategoryInput" placeholder="새 카테고리 이름" maxlength="12">
+      <button type="button" id="addCategoryBtn">+ 카테고리 추가</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <ul class="todo-list" id="todoList"></ul>
+    <div class="empty-state" id="emptyState">아직 할 일이 없어요. 위에서 추가해보세요.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var STORAGE_KEY = "todoApp.v1";
+  var DEFAULT_CATEGORIES = ["업무", "개인", "공부"];
+  var FALLBACK_CATEGORY = "미분류";
+
+  var state = loadState();
+
+  var todoInput = document.getElementById("todoInput");
+  var categorySelect = document.getElementById("categorySelect");
+  var addForm = document.getElementById("addForm");
+  var filterChips = document.getElementById("filterChips");
+  var newCategoryInput = document.getElementById("newCategoryInput");
+  var addCategoryBtn = document.getElementById("addCategoryBtn");
+  var todoListEl = document.getElementById("todoList");
+  var emptyState = document.getElementById("emptyState");
+  var progressLabel = document.getElementById("progressLabel");
+  var progressFill = document.getElementById("progressFill");
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.todos) && Array.isArray(parsed.categories)) {
+          if (!parsed.activeFilter) parsed.activeFilter = "all";
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.warn("저장된 데이터를 불러오지 못했습니다.", e);
+    }
+    return { todos: [], categories: DEFAULT_CATEGORIES.slice(), activeFilter: "all" };
+  }
+
+  function saveState() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch (e) {
+      console.warn("데이터를 저장하지 못했습니다.", e);
+    }
+  }
+
+  function makeId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function escapeHtml(str) {
+    var div = document.createElement("div");
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function renderCategorySelect() {
+    categorySelect.innerHTML = state.categories
+      .map(function (c) { return '<option value="' + escapeHtml(c) + '">' + escapeHtml(c) + "</option>"; })
+      .join("");
+  }
+
+  function renderFilterChips() {
+    var chips = ['<div class="filter-chip' + (state.activeFilter === "all" ? " active" : "") + '">' +
+      '<button type="button" class="select-chip" data-filter="all">전체</button></div>'];
+
+    state.categories.forEach(function (c) {
+      var active = state.activeFilter === c ? " active" : "";
+      chips.push(
+        '<div class="filter-chip' + active + '">' +
+          '<button type="button" class="select-chip" data-filter="' + escapeHtml(c) + '">' + escapeHtml(c) + "</button>" +
+          '<button type="button" class="remove-cat" data-remove-cat="' + escapeHtml(c) + '" title="카테고리 삭제">×</button>' +
+        "</div>"
+      );
+    });
+
+    filterChips.innerHTML = chips.join("");
+  }
+
+  function visibleTodos() {
+    if (state.activeFilter === "all") return state.todos;
+    return state.todos.filter(function (t) { return t.category === state.activeFilter; });
+  }
+
+  function renderTodoList() {
+    var todos = visibleTodos();
+    emptyState.style.display = todos.length === 0 ? "block" : "none";
+
+    todoListEl.innerHTML = todos
+      .map(function (t) {
+        return (
+          '<li class="todo-item' + (t.done ? " done" : "") + '" data-id="' + t.id + '">' +
+            '<input type="checkbox" data-action="toggle"' + (t.done ? " checked" : "") + '>' +
+            '<span class="todo-title" data-action="edit" contenteditable="false">' + escapeHtml(t.title) + "</span>" +
+            '<span class="cat-badge">' + escapeHtml(t.category) + "</span>" +
+            '<button type="button" class="delete-btn" data-action="delete" title="삭제">×</button>' +
+          "</li>"
+        );
+      })
+      .join("");
+  }
+
+  function renderProgress() {
+    var total = state.todos.length;
+    var done = state.todos.filter(function (t) { return t.done; }).length;
+    var pct = total === 0 ? 0 : Math.round((done / total) * 100);
+    progressLabel.textContent = done + " / " + total + " 완료 (" + pct + "%)";
+    progressFill.style.width = pct + "%";
+  }
+
+  function render() {
+    renderCategorySelect();
+    renderFilterChips();
+    renderTodoList();
+    renderProgress();
+  }
+
+  addForm.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var title = todoInput.value.trim();
+    if (!title) return;
+    state.todos.push({
+      id: makeId(),
+      title: title,
+      category: categorySelect.value || state.categories[0],
+      done: false,
+      createdAt: Date.now()
+    });
+    todoInput.value = "";
+    saveState();
+    render();
+    todoInput.focus();
+  });
+
+  addCategoryBtn.addEventListener("click", function () {
+    var name = newCategoryInput.value.trim();
+    if (!name) return;
+    if (state.categories.indexOf(name) !== -1) {
+      alert("이미 있는 카테고리예요.");
+      return;
+    }
+    state.categories.push(name);
+    newCategoryInput.value = "";
+    saveState();
+    render();
+  });
+
+  newCategoryInput.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addCategoryBtn.click();
+    }
+  });
+
+  filterChips.addEventListener("click", function (e) {
+    var filterBtn = e.target.closest("[data-filter]");
+    if (filterBtn) {
+      state.activeFilter = filterBtn.getAttribute("data-filter");
+      saveState();
+      render();
+      return;
+    }
+    var removeBtn = e.target.closest("[data-remove-cat]");
+    if (removeBtn) {
+      var cat = removeBtn.getAttribute("data-remove-cat");
+      if (state.categories.length <= 1) {
+        alert("카테고리가 최소 1개는 있어야 해요.");
+        return;
+      }
+      if (!confirm('"' + cat + '" 카테고리를 삭제할까요? 이 카테고리의 할 일은 "' + FALLBACK_CATEGORY + '"로 이동해요.')) return;
+
+      state.categories = state.categories.filter(function (c) { return c !== cat; });
+      state.todos.forEach(function (t) {
+        if (t.category === cat) t.category = FALLBACK_CATEGORY;
+      });
+      if (state.todos.some(function (t) { return t.category === FALLBACK_CATEGORY; }) &&
+          state.categories.indexOf(FALLBACK_CATEGORY) === -1) {
+        state.categories.push(FALLBACK_CATEGORY);
+      }
+      if (state.activeFilter === cat) state.activeFilter = "all";
+      saveState();
+      render();
+    }
+  });
+
+  todoListEl.addEventListener("click", function (e) {
+    var li = e.target.closest(".todo-item");
+    if (!li) return;
+    var id = li.getAttribute("data-id");
+    var todo = state.todos.find(function (t) { return t.id === id; });
+    if (!todo) return;
+
+    if (e.target.matches('[data-action="toggle"]')) {
+      todo.done = e.target.checked;
+      saveState();
+      renderTodoList();
+      renderProgress();
+      return;
+    }
+
+    if (e.target.matches('[data-action="delete"]')) {
+      state.todos = state.todos.filter(function (t) { return t.id !== id; });
+      saveState();
+      render();
+      return;
+    }
+
+    if (e.target.matches('[data-action="edit"]') && e.target.getAttribute("contenteditable") === "false") {
+      e.target.setAttribute("contenteditable", "true");
+      e.target.focus();
+      document.execCommand("selectAll", false, null);
+    }
+  });
+
+  todoListEl.addEventListener(
+    "blur",
+    function (e) {
+      if (!e.target.matches('[data-action="edit"]')) return;
+      finishEdit(e.target);
+    },
+    true
+  );
+
+  todoListEl.addEventListener("keydown", function (e) {
+    if (!e.target.matches('[data-action="edit"]')) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      e.target.blur();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      var li = e.target.closest(".todo-item");
+      var todo = state.todos.find(function (t) { return t.id === li.getAttribute("data-id"); });
+      e.target.textContent = todo.title;
+      e.target.setAttribute("contenteditable", "false");
+      e.target.blur();
+    }
+  });
+
+  function finishEdit(span) {
+    span.setAttribute("contenteditable", "false");
+    var li = span.closest(".todo-item");
+    var id = li.getAttribute("data-id");
+    var todo = state.todos.find(function (t) { return t.id === id; });
+    if (!todo) return;
+    var newTitle = span.textContent.trim();
+    if (!newTitle) {
+      span.textContent = todo.title;
+      return;
+    }
+    if (newTitle !== todo.title) {
+      todo.title = newTitle;
+      saveState();
+    }
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
